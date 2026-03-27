@@ -415,10 +415,10 @@ biomarkers <- c(
   "glucose_mmol_l"
 )
 
-clean_data <- clean_data %>%
+clean_data_eda <- clean_data %>%
   mutate(across(all_of(biomarkers), as.numeric))
 
-long_data <- clean_data %>%
+long_data <- clean_data_eda %>%
   select(group, all_of(biomarkers)) %>%
   pivot_longer(
     cols = -group,
@@ -471,7 +471,7 @@ Reproduce Supplementary Figure 1 using the data without modifying or removing an
 # Total n for Exercises 2.1 & 2.2: 90 patients.
 
 
-clean_data <- clean_data %>%
+clean_data_fig1 <- clean_data %>%
   mutate(
     group = factor(
       group_d,
@@ -500,9 +500,9 @@ biomarker_map <- c(
 
 
 # Convert only existing biomarkers to numeric
-clean_data <- clean_data %>%
+clean_data_fig1 <- clean_data_fig1 %>%
   mutate(across(any_of(names(biomarker_map)), as.numeric))
-fig_long <- clean_data %>%
+fig_long <- clean_data_fig1 %>%
   select(group, any_of(names(biomarker_map))) %>%
   pivot_longer(
     cols = -group,
@@ -635,7 +635,7 @@ Reproduce Supplementary Figure 1 after outlier handling and discuss how and why 
 # Healthy controls (n=28) are excluded from this comparison.
 # Total n for Exercises 2.1 & 2.2: 90 patients.
 
-clean_data <- clean_data %>%
+clean_data_log <- clean_data %>%
   mutate(
     group = factor(
       group_d,
@@ -679,7 +679,7 @@ log_transform_vars <- c(
 )
 
 # Convert only existing biomarkers to numeric
-clean_data <- clean_data %>%
+clean_data_log <- clean_data_log %>%
   mutate(across(any_of(names(biomarker_map)), as.numeric))
 
 
@@ -699,7 +699,7 @@ detect_outliers <- function(x) {
 }
 
 
-outlier_raw <- clean_data %>%
+outlier_raw <- clean_data_log %>%
   select(all_of(log_transform_vars)) %>%
   summarise(across(everything(), 
     ~ sum(. > quantile(., 0.75, na.rm = TRUE) + 1.5 * IQR(., na.rm = TRUE), 
@@ -722,7 +722,7 @@ print(outlier_raw %>% arrange(desc(Outlier_Count)))
 
 # Normality test (Shapiro-Wilk Test)
 
-normality_raw <- clean_data %>%
+normality_raw <- clean_data_log %>%
   select(all_of(log_transform_vars)) %>%
   pivot_longer(everything(), names_to = "Biomarker", values_to = "Value") %>%
   group_by(Biomarker) %>%
@@ -742,7 +742,7 @@ print(normality_raw %>% select(Biomarker, Shapiro_p, Normal))
 
 #OUTLIER HANDLING: LOG-TRANSFORMATION
 # Apply log10 transformation to selected biomarkers
-clean_data <- clean_data %>%
+clean_data_log <- clean_data_log %>%
   mutate(across(all_of(log_transform_vars),
               ~ log10(.x + 1)))
 
@@ -750,7 +750,7 @@ clean_data <- clean_data %>%
 
 #PREPARE LONG FORMAT
 
-fig_long <- clean_data %>%
+fig_long <- clean_data_log %>%
   select(group, any_of(names(biomarker_map))) %>%
   pivot_longer(
     cols = -group,
@@ -804,7 +804,7 @@ compute_signif <- function(df, var) {
 signif_df <- map_dfr(levels(fig_long$variable), ~ compute_signif(fig_long, .x))
 
 # Outlier quantification!
-outlier_counts <- clean_data %>%
+outlier_counts <- clean_data_log %>%
   select(all_of(log_transform_vars)) %>%
   summarise(across(everything(), 
     ~ sum(
@@ -868,7 +868,7 @@ outlier_counts_long <- outlier_counts %>%
   pivot_longer(everything(), names_to = "Biomarker", values_to = "Raw_Count") %>%
   mutate(Biomarker = recode(Biomarker, !!!biomarker_map))
 
-outlier_transformed_long <- clean_data %>%
+outlier_transformed_long <- clean_data_log %>%
   select(all_of(log_transform_vars)) %>%
   summarise(across(everything(), detect_outliers)) %>%
   pivot_longer(everything(), names_to = "Biomarker", values_to = "Log_Count") %>%
@@ -888,12 +888,12 @@ print(comparison_outliers)
 library(patchwork)
 
 # Rohdaten Histogramm
-p1 <- ggplot(clean_data, aes(x = creatinine_micromol_l, fill = group)) +
+p1 <- ggplot(clean_data_log, aes(x = creatinine_micromol_l, fill = group)) +
   geom_histogram(bins = 30, alpha = 0.7, position = "identity") +
   labs(title = "Raw Creatinine") + theme_minimal()
 
 # Log-Daten Histogramm (Achtung: Log-Spalte muss existieren oder hier berechnet werden)
-p2 <- ggplot(clean_data, aes(x = log10(creatinine_micromol_l + 1), fill = group)) +
+p2 <- ggplot(clean_data_log, aes(x = log10(creatinine_micromol_l + 1), fill = group)) +
   geom_histogram(bins = 30, alpha = 0.7, position = "identity") +
   labs(title = "Log10 Creatinine") + theme_minimal()
 
@@ -904,7 +904,7 @@ p1 + p2
 
 
 # After Transformation - Shapiro-Test
-normality_transformed <- clean_data %>%  # Nach log-transformation
+normality_transformed <- clean_data_log %>%  # Nach log-transformation
   select(all_of(log_transform_vars)) %>%
   pivot_longer(everything(), names_to = "Biomarker", values_to = "Value") %>%
   group_by(Biomarker) %>%
