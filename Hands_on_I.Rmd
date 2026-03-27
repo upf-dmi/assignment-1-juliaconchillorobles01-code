@@ -708,9 +708,9 @@ outlier_raw <- clean_data_log %>%
   pivot_longer(everything(), names_to = "Biomarker", values_to = "Outlier_Count") %>%
   mutate(Biomarker = recode(Biomarker, !!!biomarker_map))
 
-print(outlier_raw)  # Zeigt: "CRP" hat 3 Outlier, "WBC" hat 5 Outlier, etc.
+print(outlier_raw)  # Shows: "CRP" has 3 outliers, "WBC" has 5 outliers, etc.
 
-# Visualisierung (NICHT Boxplot!):
+# Visualization (NOT a boxplot):
 ggplot(outlier_raw, aes(x = reorder(Biomarker, Outlier_Count), y = Outlier_Count)) +
   geom_col(fill = "steelblue") +
   coord_flip() +
@@ -887,12 +887,12 @@ print(comparison_outliers)
 
 library(patchwork)
 
-# Rohdaten Histogramm
+# Raw data histogram
 p1 <- ggplot(clean_data_log, aes(x = creatinine_micromol_l, fill = group)) +
   geom_histogram(bins = 30, alpha = 0.7, position = "identity") +
   labs(title = "Raw Creatinine") + theme_minimal()
 
-# Log-Daten Histogramm (Achtung: Log-Spalte muss existieren oder hier berechnet werden)
+# Log-transformed histogram (note: log column must exist or be computed here)
 p2 <- ggplot(clean_data_log, aes(x = log10(creatinine_micromol_l + 1), fill = group)) +
   geom_histogram(bins = 30, alpha = 0.7, position = "identity") +
   labs(title = "Log10 Creatinine") + theme_minimal()
@@ -904,7 +904,7 @@ p1 + p2
 
 
 # After Transformation - Shapiro-Test
-normality_transformed <- clean_data_log %>%  # Nach log-transformation
+normality_transformed <- clean_data_log %>%  # After log-transformation
   select(all_of(log_transform_vars)) %>%
   pivot_longer(everything(), names_to = "Biomarker", values_to = "Value") %>%
   group_by(Biomarker) %>%
